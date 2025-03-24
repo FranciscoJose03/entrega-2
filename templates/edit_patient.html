@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='personedit.ico') }}">
+    <title>Editar Paciente</title>
+    <script>  
+        document.addEventListener("DOMContentLoaded", function() {
+            if (localStorage.getItem("darkMode") === "enabled") {
+                darkmode();
+            }
+        });
+        
+        function darkmode() {
+            var body = document.body;
+            var theme = body.getAttribute("data-bs-theme");
+            var darkModeButton = document.getElementById("darkModeButton");
+            if (theme === "dark") {
+                body.classList.remove("bg-dark");
+                body.classList.add("bg-light");
+                body.setAttribute("data-bs-theme", "light");
+                localStorage.setItem("darkMode", "disabled");
+                darkModeButton.textContent = "Modo Oscuro";
+            } else {
+                body.classList.remove("bg-light");
+                body.classList.add("bg-dark");
+                body.setAttribute("data-bs-theme", "dark");
+                localStorage.setItem("darkMode", "enabled");
+                darkModeButton.textContent = "Modo Claro";
+            }
+        }
+    </script>
+</head>
+<body class="bg-light" data-bs-theme="light">
+    <div class="container form-container">
+        <div class="form-box">
+            {% for patient in patient %}
+            <form id="edit_patientForm{{ patient['id'] }}" method="POST" action="{{ url_for('patients') }}">
+                <input type="hidden" name="action" value="edit_patient">
+                <input type="hidden" id="patient_id" name="patient_id" value="{{ patient['id'] }}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="nombre{{ patient['id'] }}" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="nombre{{ patient['id'] }}" name="nombre" value="{{ patient['nombre'] }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="apellido1{{ patient['id'] }}" class="form-label">Primer Apellido</label>
+                        <input type="text" class="form-control" id="apellido1{{ patient['id'] }}" name="apellido1" value="{{ patient['apellido1'] }}" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="apellido2{{ patient['id'] }}" class="form-label">Segundo Apellido</label>
+                        <input type="text" class="form-control" id="apellido2{{ patient['id'] }}" name="apellido2" value="{{ patient['apellido2'] }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="empleo{{ patient['id'] }}" class="form-label">Empleo</label>
+                        <input type="text" class="form-control" id="empleo{{ patient['id'] }}" name="empleo" value="{{ patient['empleo'] }}" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="unidad{{ patient['id'] }}" class="form-label">Unidad</label>
+                        <select class="form-select" id="unidad" name="unidad"  required>
+                            {% for unidad in unidades %}
+                            <option {% if patient['unidad'] == unidad['unidad'] %} selected {% endif %} value="{{ unidad['id'] }}">{{ unidad['unidad'] }}</option>
+                        {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="destino{{ patient['id'] }}" class="form-label">Destino</label>
+                        <input type="text" class="form-control" id="destino{{ patient['id'] }}" name="destino" value="{{ patient['destino'] }}">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="situacion{{ patient['id'] }}" class="form-label">Situacion</label>
+                    <input type="text" class="form-control" id="situacion{{ patient['id'] }}" name="situacion" value="{{ patient['situacion'] }}">
+                </div>
+                <div class="mb-3">
+                    <label for="observaciones" class="form-label">Observaciones</label>
+                    <input type="text" class="form-control" id="observaciones{{ patient['id'] }}" name="observaciones" value="{{ patient['observaciones'] }}">
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="ta" class="form-label">TA</label>
+                        <input type="text" class="form-control" id="ta{{ patient['id'] }}" name="ta" value="{{ patient['ta'] }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="altura" class="form-label">Altura</label>
+                        <input type="number" class="form-control" id="altura{{ patient['id'] }}" name="altura" step="0.01" value="{{ patient['altura'] }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="peso" class="form-label">Peso</label>
+                        <input type="number" class="form-control" id="peso{{ patient['id'] }}" name="peso" step="0.01" value="{{ patient['peso'] }}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="ultimoreco" class="form-label">Último Reconocimiento</label>
+                        <input type="date" class="form-control" id="ultimoreco" name="ultimoreco" required max="{{ today_date }}" value="{% if patient['ultimoreco'] != none %}{{ patient['ultimoreco'].strftime('%Y-%m-%d') }}{% endif %}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="revision" class="form-label">Revisión</label>
+                        <input type="datetime-local" class="form-control" id="revision" name="revision" value="{% if patient['revision'] != none %}{{ patient['revision'].strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+                    </div>    
+                </div>
+                {% endfor %}
+                <!--
+
+                    <div class="col-md-6 mb-3">
+                        <label for="resultadoActualTFCF{{ patient['id'] }}" class="form-label">Resultado Actual TFCF</label>
+                        <select class="form-select" id="resultadoActualTFCF{{ patient['id'] }}" name="resultadoActualTFCF">
+                            <option value=" " {% if patient['ultimoreco'] == ' ' %}selected{% endif %}> </option>
+                            <option value="Aprobado" {% if patient['ultimoreco'] == 'Aprobado' %}selected{% endif %}>Aprobado</option>
+                            <option value="Fallado" {% if patient['ultimoreco'] == 'Fallado' %}selected{% endif %}>Fallado</option>
+                            <option value="Por revisar" {% if patient['ultimoreco'] == 'Por revisar' %}selected{% endif %}>Por revisar</option>
+                        </select>
+                    </div>
+                <div class="row">
+                    <div class="mb-3">
+                        <label for="cie10{{ patient['id'] }}" class="form-label">CIE10</label>
+                        <div class="input-group">
+                            {% if patient['altura'] == none %}
+                            <input type="text" class="form-control" id="cie10{{ patient['id'] }}" name="cie10" value="" list="cie10Options{{ patient['id'] }}">
+                            <datalist id="cie10Options{{ patient['id'] }}">
+                                {% for code, name in cie10_data.items() %}
+                                    <option value="{{ code }}"> {{ code }} - {{ name }} </option>
+                                {% endfor %}
+                            </datalist>
+                            {% else %}
+                            <input type="text" class="form-control" id="cie10{{ patient['id'] }}" name="cie10" value="{{ patient['altura'] }}" list="cie10Options{{ patient['id'] }}">
+                            <datalist id="cie10Options{{ patient['id'] }}">
+                                {% for code, name in cie10_data.items() %}
+                                    <option value="{{ code }}"> {{ code }} - {{ name }} </option>
+                                {% endfor %}
+                            </datalist>
+                            {% endif %}
+                        </div>
+                    </div> 
+                </div>
+                -->
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('patients') }}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

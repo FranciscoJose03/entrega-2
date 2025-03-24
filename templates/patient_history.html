@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Paciente</title>
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='historico.ico') }}">
+    <script>
+        function confirmarEnvio() {
+            return confirm('¿Estás seguro de que deseas eliminar esta información adicional?');
+        }
+        
+        document.addEventListener("DOMContentLoaded", function() {
+            if (localStorage.getItem("darkMode") === "enabled") {
+                darkmode();
+            }
+        });
+    
+        function darkmode() {
+            var body = document.body;
+            var theme = body.getAttribute("data-bs-theme");
+            var darkModeButton = document.getElementById("darkModeButton");
+            if (theme === "dark") {
+                body.classList.remove("bg-dark");
+                body.classList.add("bg-light");
+                body.setAttribute("data-bs-theme", "light");
+                localStorage.setItem("darkMode", "disabled");
+                darkModeButton.textContent = "Modo Oscuro";
+            } else {
+                body.classList.remove("bg-light");
+                body.classList.add("bg-dark");
+                body.setAttribute("data-bs-theme", "dark");
+                localStorage.setItem("darkMode", "enabled");
+                darkModeButton.textContent = "Modo Claro";
+            }
+        }
+    </script>
+</head>
+<body class="bg-light" data-bs-theme="light">
+    <div class="container text-center" style="max-width: 98% !important;">
+        <header class="p-3 mb-3 border-bottom">
+            <div class="container">
+                <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+                <div class="d-flex align-items-center mb-2 mb-lg-0   text-decoration-none">
+                    <button onclick="window.location.href='{{ url_for('patients') }}';" style="background: none; border: none; padding: 0;">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" width="40" height="40">
+                    </button>
+                </div>
+
+                <ul class="nav col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0" style="margin: auto;">
+                    <!--
+                    <li class="d-flex align-items-center">
+                        <form action="{{ url_for('patient') }}" method="post" class="m-0">
+                            <input type="hidden" name="patient_id" value="{{ history.nombre }}">
+                            <button type="submit" style="background: none !important; border: none; padding: 0;">
+                                <i class="bi bi-arrow-left"></i>
+                            </button>
+                        </form>
+                    </li>
+                    -->
+                    <li class="d-flex align-items-center">
+                        {% if history %}<p class="px-2 m-0" style="font-size: 20px;">Historicos de <strong>{{ history.nombre }} {{ history.apellido1 }} {{ history.apellido2 }}</strong></p>
+                        {% else %}<p class="px-2 m-0" style="font-size: 20px;">No se encontro Historico de paciente</p>
+                        {% endif %}
+                    </li>
+                </ul>
+                
+
+                <div class="dropdown text-end">
+                    <a href="#" class="d-block link-body-emphasis text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img alt="{{ user.name }}" width="32" height="32" class="rounded-circle">
+                    </a>
+                    <ul class="dropdown-menu text-small">
+                        <li><button id="darkModeButton" class="dropdown-item" type="button" onclick="darkmode();">Modo Oscuro</button></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/logout">Log Out</a></li>
+                    </ul>
+                </div>
+                </div>
+            </div>
+        </header>
+    </div>
+    {% if history %}
+    <div class="container" style="max-width: 95%">  
+        <br>
+        <div class="row">
+            <div class="col-md-4 order-md-1" style="max-width: 25%; margin-right: 50px; height:100%">
+                <div class="d-flex flex-column align-items-stretch flex-shrink-0 bg-body-tertiary">
+                    <form action="{{ url_for('patient') }}" method="post" class="d-flex align-items-center flex-shrink-0 p-3 text-decoration-none border-bottom">
+                        <input type="hidden" name="patient_id" value="{{ history.id }}"> <!--Patciente ID-->
+                        <div class="d-flex justify-content-between w-100">
+                            <button type="submit" class="btn btn-link p-0 text-decoration-none">
+                                <i class="bi bi-house-door"></i>
+                                <span class="fs-5 fw-semibold ms-2" style="font-size: 15px !important;">Información de {{ history.nombre }} {{ history.apellido1 }} {{ history.apellido2 }}</span>
+                            </button>
+                            <select id="filterType" class="form-select-sm" style="max-width: auto" onchange="filterByType()">
+                                <option value="">Todos</option>
+                                {% set tipos = [] %}
+                                {% for historicopaciente in historicopacientes %}
+                                    {% if historicopaciente.tipo not in tipos %}
+                                        <option value="{{ historicopaciente.tipo }}">{{ historicopaciente.tipo }}</option>
+                                        {% set _ = tipos.append(historicopaciente.tipo) %}
+                                    {% endif %}
+                                {% endfor %}
+                                <option value="not-auto">Menos las auto</option>
+                            </select>
+
+                            <script>
+                                function filterByType() {
+                                    var selectedType = document.getElementById('filterType').value;
+                                    var items = document.querySelectorAll('.list-group-item');
+                                    console.log(selectedType);
+                                    items.forEach(function(item) {
+                                        var itemType = item.querySelector('.text-body-secondary').textContent.trim();
+                                        console.log(itemType);
+                                        if (selectedType == "" || itemType == selectedType || (selectedType == "not-auto" && itemType != "Auto")) {
+                                            item.style.display = "";
+                                        } else {
+                                            item.style.display = "none";
+                                        }
+                                    });
+                                }
+                            </script>
+                            <button type="button" class="btn p-0" onclick="sortHistory()" aria-label="Sort history">
+                                <i class="bi bi-arrow-down-up"></i>
+                            </button>
+                        </div>
+                    </form>
+                    <div class="d-flex flex-column align-items-stretch flex-shrink-0 bg-body-tertiary">
+                        <div class="list-group list-group-flush border-bottom" style="height:1000px; overflow-y: auto;">
+                            {% if historicopacientes %}
+                            {% for historicopaciente in historicopacientes %}
+                            <a href="{{ url_for('patient_history', id=historicopaciente.patient_id, history_index=loop.index0) }}" class="list-group-item list-group-item-action py-3 lh-sm {% if loop.index0 == current_history_index %}active{% endif %}">
+                                <div class="d-flex w-100 justify-content-between" style="max-height: 300px; overflow-y: auto;">
+                                        <p class="mb-0 me-2 ">{{ loop.index0+1 }} <strong class="m-lg-3">{{ historicopaciente.created_at_historico.strftime('%d-%m-%Y %H:%M:%S') }}</strong></p>
+                                        <small class="text-body-secondary mb-0">{{ historicopaciente.tipo }}</small>
+                                </div>
+                                <!--<div class="col-10 mb-1 small">{{ historicopaciente.info }}</div>-->
+                            </a>
+                            {% endfor %}
+                        {%endif%}
+                        </div>
+                    </div>
+                <script>
+                    function sortHistory() {
+                        var listGroup = document.querySelector('.list-group');
+                        var items = Array.from(listGroup.getElementsByClassName('list-group-item'));
+                        var isAscending = listGroup.getAttribute('data-order') === 'asc';
+                        items.sort(function(a, b) {
+                            var dateA = new Date(a.querySelector('strong').textContent);
+                            var dateB = new Date(b.querySelector('strong').textContent);
+                            return isAscending ? dateB - dateA : dateA - dateB;
+                        });
+                        items.forEach(function(item) {
+                            listGroup.appendChild(item);
+                        });
+                        listGroup.setAttribute('data-order', isAscending ? 'desc' : 'asc');
+                    }
+                </script>
+                </div>
+            </div>
+            <div class="col-md-8 order-md-2">
+                <!--
+                <form action="{{ url_for('patient') }}" method="post" class="btn btn-secondary mb-3">
+                    <input type="hidden" name="patient_id" value="{{ history.nombre }}">
+                    <button type="submit" class="btn btn-link p-0 text-decoration-none">
+                        <i class="bi bi-arrow-left"></i>
+                        <span class="fs-6 fw-semibold ms-1">Volver</span>
+                    </button>
+                </form>
+                -->
+                {% if history %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+
+                        <button class="btn btn-outline-primary" onclick="navigateHistory('prev')" {% if current_history_index == 0 %}disabled{% endif %}>
+                            <i class="bi bi-arrow-left"></i> Anterior
+                        </button>
+                        <span>Histórico {{ current_history_index + 1 }} de {{ total_histories }}</span> 
+                        <button class="btn btn-outline-primary" onclick="navigateHistory('next')" {% if current_history_index == total_histories - 1 %}disabled{% endif %}>
+                            Siguiente <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <div class="row justify-content-center">
+                        <div class="mb-3 text-center">
+                            <label style="font-size: 22px;" for="firstName"><strong>Creado el </strong>{{ history.created_at_historico.strftime('%d-%m-%Y %H:%M:%S') }}</label>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="firstName"><strong>Fecha de Nacimiento</strong></label>
+                            <p>{{ history.revision.strftime('%d-%m-%Y') }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="lastName"><strong>Teléfono</strong></label>
+                            <p>{{ history.ta }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="mb-3">
+                            <label for="firstName"><strong>Dirección</strong></label>
+                            <p>{{ history.domicilio }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="firstName"><strong>Fecha Último Apto TFCF</strong></label>
+                            <p>{{ history.ultimoreco.strftime('%d-%m-%Y') if history.ultimoreco else '' }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="lastName"><strong>Resultado Actual TFCF</strong></label>
+                            <p>{{ history.situacion }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="mb-3">
+                            <label for="firstName"><strong>Observaciones TFCF</strong></label>
+                            <p>{{ history.observaciones }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="firstName"><strong>Fecha Inicio Baja</strong></label>
+                            <p>{{ history.baja.strftime('%d-%m-%Y') if history.baja else '' }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="lastName"><strong>Fecha Fin Baja</strong></label>
+                            <p>{{ history.rmnp.strftime('%d-%m-%Y') if history.rmnp else '' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="mb-3">
+                            <label for="firstName"><strong>CIE10</strong></label>
+                            {% if history.cie10 == none %}
+                                <p></p>
+                            {% else %} 
+                                <p>{{ history.cie10 }} - {{ cie10_data[history.cie10] }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="mb-3">
+                            <label for="firstName"><strong>Diagnóstico</strong></label>
+                            <p>{{ history.motivo }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="firstName"><strong>Unidad</strong></label>
+                            <p>{{ history.unidad }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="lastName"><strong>Empleo</strong></label>
+                            <p>{{ history.empleo }}</p>
+                        </div>
+                    </div>
+                    {% if info_adicional %}
+                    <div class="row">
+                        {% for info in info_adicional %}
+                            {% if info.deleted_at %}
+                                {% if info.deleted_at <= history.created_at_historico %}
+                                <div class="col-md-12">
+                                    <div class="card mb-3 shadow-sm" style="background-color: rgba(128, 128, 128);"> 
+                                        <div class="card-body" style="background-color: rgba(128, 128, 128);">
+                                            <h6 class="card-subtitle mb-2" style="background-color: rgba(128, 128, 128);">{{ info.created_at_info }}</h6>
+                                            <p class="card-text" style="background-color: rgba(128, 128, 128);">{{ info.info_ad }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                {% if info.created_at_info <= history.created_at_historico %} 
+                                <div class="col-md-12">
+                                    <div class="card mb-3 shadow-sm">
+                                        <div class="card-body">       
+                                            <h6 class="card-subtitle mb-2">{{ info.created_at_info }}</h6>
+                                            <p class="card-text">{{ info.info_ad }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No hay información adicional disponible.</p>
+                    {% endif %}
+                {% else %}
+                    <div class="d-flex justify-content-center">
+                        <p class="text-muted" style="font-size: 25px;">No se encontró Historico de este paciente.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="d-flex justify-content-center">
+        <p class="text-muted" style="font-size: 25px;">No se encontró Historico de este paciente.</p>
+    </div>
+    {% endif %}
+    <script>
+        function navigateHistory(direction) {
+            var currentHistoryIndex = {{ current_history_index }};
+            var totalHistories = {{ total_histories }};
+            if (direction === 'prev' && currentHistoryIndex > 0) {
+                currentHistoryIndex--;
+            } else if (direction === 'next' && currentHistoryIndex < totalHistories - 1) {
+                currentHistoryIndex++;
+            }
+            window.location.href = `{{ url_for('patient_history', id=patient_id) }}&history_index=${currentHistoryIndex}`;
+        }
+    </script>
+</body>
+</html>

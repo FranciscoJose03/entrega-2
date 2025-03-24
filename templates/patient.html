@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informacion Paciente</title>
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='patient.ico') }}">
+    <script>
+        function confirmarEnvio() {
+            return confirm('¿Estás seguro de que deseas eliminar esta información adicional?');
+        }
+        
+        document.addEventListener("DOMContentLoaded", function() {
+            if (localStorage.getItem("darkMode") === "enabled") {
+                darkmode();
+            }
+        });
+    
+        function darkmode() {
+            var body = document.body;
+            var theme = body.getAttribute("data-bs-theme");
+            var darkModeButton = document.getElementById("darkModeButton");
+            if (theme === "dark") {
+                body.classList.remove("bg-dark");
+                body.classList.add("bg-light");
+                body.setAttribute("data-bs-theme", "light");
+                localStorage.setItem("darkMode", "disabled");
+                darkModeButton.textContent = "Modo Oscuro";
+            } else {
+                body.classList.remove("bg-light");
+                body.classList.add("bg-dark");
+                body.setAttribute("data-bs-theme", "dark");
+                localStorage.setItem("darkMode", "enabled");
+                darkModeButton.textContent = "Modo Claro";
+            }
+        }
+    </script>
+</head>
+<body class="bg-light">
+    <div class="container text-center" style="max-width: 98% !important;">
+        <header class="p-3 mb-3 border-bottom">
+            <div class="container">
+                <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+                <div class="d-flex align-items-center mb-2 mb-lg-0   text-decoration-none">
+                    <button onclick="window.location.href='{{ url_for('patients') }}';" style="background: none; border: none; padding: 0;">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" width="40" height="40">
+                    </button>
+                </div>
+
+                <ul class="nav col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0" style="margin: auto;">
+                    <button type="button" class="btn" data-bs-toggle="modal" data-bs-target="#saveModal" style="padding: 0;">
+                        <i class="bi bi-floppy"></i>
+                    </button>
+                    {% for patient in patient %}
+                    <li><p class="px-2" style="margin: auto; font-size: 20px;">Información de <strong>{{ patient.nombre }} {{ patient.apellido1 }} {{ patient.apellido2 }}</strong></p></li>
+                    <a href="{{ url_for('patient_history', id=patient.id, history_index=0) }}" class="input-group-text" style="background-color: transparent; border: transparent; padding: 0;">
+                        <i class="bi bi-clock-history" style="cursor: pointer;"></i>
+                    </a>
+                    {% endfor %}
+                </ul>
+
+                <div class="dropdown text-end">
+                    <a href="#" class="d-block link-body-emphasis text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img alt="{{ user.name }}" width="32" height="32" class="rounded-circle">
+                    </a>
+                    <ul class="dropdown-menu text-small">
+                        <li><button id="darkModeButton" class="dropdown-item" type="button" onclick="darkmode();">Modo Oscuro</button></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/logout">Log Out</a></li>
+                    </ul>
+                </div>
+                </div>
+            </div>
+        </header>
+        <div class="modal fade" id="saveModal" tabindex="-1" aria-labelledby="saveModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="saveModalLabel">Guardar Historico</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form method="POST" action="{{ url_for('patient') }}">
+                            <input type="hidden" name="action" value="create_historicopacientes">
+                            {% for patient in patient %}
+                            <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                            {% endfor %}
+                            <div class="mb-3">
+                                <label for="saveType"  class="form-label">TIPO</label><br>
+                                <input type="text" name="tipo" class="form-control" id="saveType" name="saveType" maxlength="20" required>
+                                <small><em>Antes de Maniobras, Después de Maniobras,  </em></small>
+                            </div>
+                            <button type="submit" class="btn btn-success">Guardar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container" >  
+        <br>
+        <div class="row">
+            <div class="col order-md-1">
+            <!--
+                <div class="d-flex justify-content-between mb-3">
+                    <a href="{{ url_for('patients') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                    <a href="{{ url_for('patient_history', id=patient[0], history_index=0) }}" class="btn btn-info">
+                        <i class="bi bi-clock-history"></i> Ver Histórico
+                    </a>
+                </div>
+            -->
+            {% for patient in patient %}
+            <div class="col-md-6 mx-auto">
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header text-center">
+                        <h4 class="my-0 fw-normal">{{ patient.nombre }} {{ patient.apellido1 }} {{ patient.apellido2 }}</h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mt-3 mb-4">
+                            <li><strong>Empleo:</strong> {{ patient.empleo }}</li>
+                            <li><strong>Unidad:</strong> {{ patient.unidad }}</li>
+                            <li><strong>Destino:</strong> {{ patient.destino }}</li>
+                            <li><strong>Último Reconocimiento:</strong> {{ patient.ultimoreco.strftime('%d-%m-%Y') }}</li>
+                            <li><strong>Situación:</strong> {{ patient.situacion }}</li>
+                            <li><strong>Observaciones:</strong> {{ patient.observaciones }}</li>
+                            <li><strong>TA:</strong> {{ patient.ta }}</li>
+                            <li><strong>Altura:</strong> {{ patient.altura }} m</li>
+                            <li><strong>Peso:</strong> {{ patient.peso }} kg</li>
+                            <li><strong>Revisión:</strong> {{ patient.revision.strftime('%d-%m-%Y') }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+                <div class="row">
+                    <div class="mb-3 d-flex justify-content-between align-items-center">
+                        <label for="infoAdicional" class="form-label mb-0"><strong>Información Adicional</strong></label>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addInfoModal">
+                            Añadir
+                        </button>
+                    </div>
+
+                        {% if info_adicional %}
+                        <div class="row">
+                            {% for info in info_adicional %}
+                                {% if not info.deleted_at %}
+                                    <div class="col-md-12">
+                                        <div class="card mb-3 shadow-sm">
+                                            <div class="card-body">
+                                                <h6 class="card-subtitle mb-2 text-muted">{{ info.created_at_info.strftime('%d-%m-%Y') }}</h6>
+                                                <p class="card-text">{{ info.info_ad }}</p>
+                                            </div>
+                                            <div class="card-footer text-end">
+                                                <button type="button" class="btn btn-danger" onclick="if(confirmarEnvio()) { document.getElementById('deleteInfoForm{{ info.id }}').submit(); }">
+                                                    Eliminar
+                                                </button>
+                                                <form id="deleteInfoForm{{ info.id }}" action="{{ url_for('patient') }}" method="POST" style="display: none;">                            
+                                                    <input type="hidden" name="action" value="delete_info">
+                                                    {% for patient in patient %}
+                                                    <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                                                    {% endfor %}
+                                                    <input type="hidden" name="info_adicional_id" value="{{ info.id }}">
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No hay información adicional disponible.</p>
+                        {% endif %}
+
+                        <div class="modal fade" id="addInfoModal" tabindex="-1" aria-labelledby="addInfoModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="addInfoModalLabel">Añadir Información Adicional</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form method="POST" action="{{ url_for('patient') }}">
+                                            <input type="hidden" name="action" value="add_info">
+                                            {% for patient in patient %}
+                                            <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                                            {% endfor %}
+                                            <div class="mb-3">
+                                                <label for="infoAdicionalInput" class="form-label">Añadir Información Adicional</label>
+                                                <textarea class="form-control" id="infoAdicionalInput" name="infoAdicional" rows="3"></textarea>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">Añadir</button>
+                                        </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='patients.ico') }}">
+    <title>Pacientes</title>
+    <script>        
+        document.addEventListener("DOMContentLoaded", function() {
+            if (localStorage.getItem("darkMode") === "enabled") {
+                darkmode();
+            }
+        });
+        
+        function darkmode() {
+            var body = document.body;
+            var theme = body.getAttribute("data-bs-theme");
+            var darkModeButton = document.getElementById("darkModeButton");
+            if (theme === "dark") {
+                body.classList.remove("bg-dark");
+                body.classList.add("bg-light");
+                body.setAttribute("data-bs-theme", "light");
+                localStorage.setItem("darkMode", "disabled");
+                darkModeButton.textContent = "Modo Oscuro";
+            } else {
+                body.classList.remove("bg-light");
+                body.classList.add("bg-dark");
+                body.setAttribute("data-bs-theme", "dark");
+                localStorage.setItem("darkMode", "enabled");
+                darkModeButton.textContent = "Modo Claro";
+            }
+        }
+
+        let ascending = true;
+        function sortTableByDate() {
+            const table = document.getElementById("patientTable");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+            rows.sort((a, b) => {
+                const dateCellA = a.cells[14].textContent || a.cells[14].innerText;
+                const dateCellB = b.cells[14].textContent || b.cells[14].innerText;
+
+                if (!dateCellA || !dateCellB) return 0;
+
+                let dateA = dateCellA.split("-");
+                let dateB = dateCellB.split("-");
+
+                dateA = new Date(dateA[2], dateA[1] - 1, dateA[0]);
+                dateB = new Date(dateB[2], dateB[1] - 1, dateB[0]);
+                
+                return ascending ? dateA - dateB : dateB - dateA; 
+            });
+
+            ascending = !ascending;
+
+            rows.forEach(row => tbody.appendChild(row));
+        }
+    </script>
+</head>
+<body class="bg-light">
+    <div class="container text-center" style="max-width: 98% !important;">
+        <header class="p-3 mb-3 border-bottom">
+            <div class="container">
+                <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+                <div class="d-flex align-items-center mb-2 mb-lg-0 text-decoration-none">
+                    <button onclick="window.location.href='/patients';" style="background: none; border: none; padding: 0;">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="" width="40" height="40">
+                    </button>
+                </div>
+
+                <ul class="nav col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0" style="margin: auto;">
+                <li><p class="px-2" style="margin: auto; font-size: 20px;">Lista de Pacientes ({{ patients|length }})</p></li>
+                <a href="/add_patient" class="input-group-text" style="background-color: transparent; border: transparent; padding: 0;">
+                    <i class="bi bi-plus-circle" style="cursor: pointer;"></i>
+                </a>
+                </ul>
+
+                <div class="dropdown text-end">
+                    <a href="#" class="d-block link-body-emphasis text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img alt="{{ user.name }}" width="32" height="32" class="rounded-circle">
+                    </a>
+                    <ul class="dropdown-menu text-small">
+                        {% if user.tipo == "super" %}
+                        <li>
+                            <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#confirmationModal">Ver Panel</button> 
+                        </li>
+                        {% endif %}
+                        <li><a class="dropdown-item" href="/calendario" target="_blank">Ver Calendario</a></li>
+                        <li><a class="dropdown-item" href="/patients_bajas" target="_blank">Ver Pacientes de Baja</a></li>
+                        <li><a class="dropdown-item" href="/cie10" target="_blank">Ver Lista CIE10</a></li>
+                        <li><button id="darkModeButton" class="dropdown-item" type="button" onclick="darkmode();">Modo Oscuro</button></li>
+                        <li><a class="dropdown-item" href="/export">Exportar</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/logout">Log Out</a></li>
+                    </ul>
+                </div>
+                </div>
+            </div>
+        </header>
+        <div class="d-flex justify-content-center">
+            <div class="input-group mb-3" style="width: 30%;">
+            <form method="POST" action="{{ url_for('patients') }}" class="w-100">
+            <input type="hidden" name="action" value="search_patient">
+            <div class="d-flex mb-2 justify-content-center">
+                <input type="text" class="form-control w-27 me-2" name="nombre" placeholder="Buscar por Nombre">
+                <input type="text" class="form-control w-27 me-2" name="apellidos" placeholder="Buscar por Apellidos">
+            </div>
+            <div class="input-group-append">
+                <button class="btn btn-warning w-25" type="submit">Buscar</button>
+            </div>
+            </form>
+            </div>
+        </div>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="alert alert-info" role="alert">
+                {% for message in messages %}
+                <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+        <div class="d-flex justify-content-center mb-3" style="width: 50%; margin: auto;">
+            <form method="POST" action="{{ url_for('patients') }}" class="w-100">
+                <input type="hidden" name="action" value="get_patient_cita_proximas">
+                <div class="input-group-append">
+                    <button class="btn btn-warning" style="width:85%" type="submit">Ver Próximas Citas</button>
+                </div>
+            </form>
+            <form method="POST" action="{{ url_for('patients') }}" class="w-100">
+                <input type="hidden" name="action" value="get_patient_cita_hoy">
+                <div class="input-group-append">
+                    <button class="btn btn-warning" style="width:85%" type="submit">Ver Citas Hoy</button>
+                </div>
+            </form>
+        </div>
+        
+        <table class="table table-striped thead" id="patientTable" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th class="align-middle">Empleo</th>                
+                    <th class="align-middle">Nombre</th>
+                    <th class="align-middle">Apellido 1</th>
+                    <th class="align-middle">Apellido 2</th>
+                    <th class="align-middle">Unidad</th>
+                    <th class="align-middle">Destino</th>
+                    <th class="align-middle">Dias Hasta Caducar</th>
+                    <th class="align-middle">Ultimo Reconocimiento</th>
+                    <th class="align-middle">Situación</th>
+                    <th class="align-middle">Observaciones</th>
+                    <th class="align-middle">TA</th>
+                    <th class="align-middle">Altura</th>
+                    <th class="align-middle">Peso</th>
+                    <th class="align-middle">IMC</th>
+                    <th class="align-middle" style="cursor: pointer;" onclick="sortTableByDate()">Revisión</th>
+                    <th class="align-middle">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if patients %}
+                    {% for patient in patients %}
+                    <tr>
+                        <td>{{ patient['empleo'] }}</td> <!--Empleo-->
+                        <td>
+                            <form method="POST" action="{{ url_for('patient') }}">
+                                <input type="hidden" name="patient_id" value="{{ patient['id'] }}"> <!--ID-->
+                                <button type="submit" class="btn btn-link p-0" style="--bs-btn-color: inherit;">{{ patient['nombre'] }}</button> <!--Nombre-->
+                            </form>
+                        </td>
+                        <td>{{ patient['apellido1'] }}</td> <!--Apellido1-->
+                        <td>{{ patient['apellido2'] }}</td> <!--Apellido2-->
+                        <td>{{ patient['unidad'] }}</td> <!--Unidad-->
+                        <td>{{ patient['destino'] }}</td> <!--Destino-->
+                        {% if patient['ultimoreco'] %} {% set diasparacaducar = (patient['ultimoreco'] - today).days + 366 %} 
+                        <td style="background-color:{% if diasparacaducar < 30 %} rgba(255, 7, 7, 0.59) {% elif diasparacaducar < 60 %} rgba(255, 193, 7, 0.59) {% else %} rgba(0, 255, 4, 0.59) {% endif %}">
+                            {{ diasparacaducar }}
+                        </td> <!--Dias Hasta Caducar-->
+                        {% else %}
+                        <td></td> <!--Dias Hasta Caducar-->
+                        {% endif %}
+                        <td>{{ patient['ultimoreco'].strftime('%d-%m-%Y') }}</td> <!--Ultimo Reconocimiento-->
+                        <td style="{% if patient['situacion'] == 'NO APTO TEMPORAL' %}color: rgb(77, 0, 0); background-color: rgba(255, 7, 7, 0.59);{% endif %}">{{ patient['situacion'] }}</td> <!--Situacion-->
+                        <td>{{ patient['observaciones'] }}</td> <!--Observaciones-->                        
+                        <td>{{ patient['ta'] }}</td> <!--Tension Arterial-->
+                        <td>{{ patient['altura'] }}</td> <!--Altura-->
+                        <td>{{ patient['peso'] }}</td> <!--Peso-->   
+                        {% set imc = patient['peso'] / (patient['altura'] ** 2) %}
+                        <td style="background-color:{% if imc < 27 %} rgba(0, 255, 4, 0.59) {% elif imc < 30 %} rgba(255, 193, 7, 0.59) {% else %} rgba(138, 103, 0, 0.59) {% endif %}">
+                            {{ '{:.1f}'.format(imc) }}
+                        </td> <!--IMC-->
+                        <td>{{ patient['revision'].strftime('%d-%m-%Y %H:%M') }}</td> <!--Revision-->
+                        <td>
+                            <button type="button" class="btn btn-warning" onclick="window.location.href='/edit_patient?id={{ patient['id'] }}';">
+                                <i class="bi bi-pencil"></i>    
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="if(confirm('¿Estás seguro de que deseas eliminar a {{  patient['nombre'] }} {{ patient['apellido1'] }} {{ patient['apellido2'] }}?')) { document.getElementById('deletePatientForm{{ patient['id'] }}').submit(); }">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="window.location.href='/add_patient_baja?id={{ patient['id'] }}';">
+                                <i class="bi bi-arrow-down-circle"></i>
+                            </button>
+                            <form id="deletePatientForm{{ patient['id'] }}" action="{{ url_for('patients') }}" method="POST" style="display: none;">                            
+                                <input type="hidden" name="patient_id" value="{{ patient['id'] }}">
+                                <input type="hidden" name="action" value="delete_patient">
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+
+        {% if current_page %}
+        <!-- Controles de Paginación -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if current_page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('patients', page=1) }}" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                {% if current_page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('patients', page=current_page - 1) }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for page_num in range(start_page, end_page + 1) %}
+                    <li class="page-item {% if page_num == current_page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('patients', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                {% endfor %}
+
+                {% if current_page < total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('patients', page=current_page + 1) }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+            {% if current_page < total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('patients', page=total_pages) }}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+            </ul>
+            <small class="text-muted">Página {{ current_page }} de {{ total_pages }}</small>
+        </nav>
+
+        <br>
+        {% endif %}
+
+        
+
+        {% if user.tipo == "super" %}
+        <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmationModalLabel">Confirmación</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/panel" method="POST">
+                            <label for="viewLogs">¿Desea ver los Logs?</label>
+                            <div class="d-flex justify-content-center">
+                                <select id="viewLogs" name="viewLogs" class="form-select" style="width:auto;" required>
+                                    <option value="yes">Sí</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <input type="submit" class="btn btn-primary mt-2">
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
