@@ -76,7 +76,13 @@ def unauthorized():
 
 @app.before_request
 def before_request():
-    #LA IDEA DE UN FUTURO ES LIMITARLO PARA QUE SOLO ENTRE X GENTE
+    if 'X-Real-Ip' in request.headers:
+        ip = request.headers.get('X-Real-Ip')
+        if not db.is_ip_allow(ip):
+            logging.warning(f'{ip} - Trying to access.')
+            return "Bye Bye", 403
+    else: 
+        return "No IP", 403
     g.user = current_user
 
 @app.after_request
@@ -168,20 +174,13 @@ def check_user_active():
 @login_required
 def export():
     check_user_active()
-    return redirect(url_for('patients'))
-    """
-    EXPORTADOR DE DATOS
-    
-    if not dbusers.check_user_active(g.user.id):
-        flash('Your user is inactive. Please contact the administrator.')
     
     return Response(
                     db.create_backup(),
                     mimetype='application/octet-stream',
                     headers={'Content-disposition': f'attachment; filename=campaign_result_{datetime.now()}.bin'}
                 )
-    """
-
+    
 @app.route('/patients', methods=['GET', 'POST'])
 @login_required
 def patients():
